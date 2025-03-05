@@ -1,6 +1,7 @@
 #include <chrono>
 #include <cstdint>
 #include <fstream>
+#include <iostream>
 #include <random>
 
 using namespace std;
@@ -44,7 +45,8 @@ public:
 	uint16_t opcode;
 
 	// Constructor
-	CHIP8() : randGen(chrono::system_clock::now().time_since_epoch().count()) {
+	CHIP8() : randGen(static_cast<unsigned int>(chrono::system_clock::now().time_since_epoch().count())),
+			  randByte(0, 255u) {
 		// Initialize program counter
 		pc = START_ADDRESS;
 
@@ -53,12 +55,10 @@ public:
 			memory[FONTSET_START_ADDRESS + i] = fontset[i];
 		}
 
-		// Initialize RNG
-		randByte = uniform_int_distribution<uint8_t>(0, 255U);
 	}
 
 	std::default_random_engine randGen;
-	std::uniform_int_distribution<uint8_t> randByte;
+	std::uniform_int_distribution<unsigned int> randByte;
 
 	// Class Functions
 	void LoadROM(const char* filename);
