@@ -10,6 +10,8 @@ using namespace std;
 const unsigned int FONTSET_SIZE = 80;
 const unsigned int FONTSET_START_ADDRESS = 0x50;
 const unsigned int START_ADDRESS = 0x200;
+const unsigned int SCREEN_WIDTH = 0x40;
+const unsigned int SCREEN_HEIGHT = 0x20;
 
 uint8_t fontset[FONTSET_SIZE] = {
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -163,5 +165,175 @@ void CHIP8::OP_4xkk() {
 	uint8_t byte = opcode & 0x00FFu;
 
 	if (registers[Vx] != byte)
+		pc += 2;
+}
+
+void CHIP8::OP_5xy0() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+
+	if (registers[Vx] == registers[Vy])
+		pc += 2;
+}
+
+void CHIP8::OP_6xkk() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t kk = opcode & 0x00FFu;
+
+	registers[Vx] = kk;
+}
+
+void CHIP8::OP_7xkk() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t kk = opcode & 0x00FFu;
+
+	registers[Vx] = registers[Vx] + kk;
+}
+
+void CHIP8::OP_8xy0() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+
+	registers[Vx] = registers[Vy];
+}
+
+void CHIP8::OP_8xy1() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+	
+	registers[Vx] |= registers[Vy];
+}
+
+void CHIP8::OP_8xy2() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+
+	registers[Vx] &= registers[Vy];
+}
+
+void CHIP8::OP_8xy3() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+
+	registers[Vx] ^= registers[Vy];
+}
+
+void CHIP8::OP_8xy4() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+
+	uint16_t sum = registers[Vx] + registers[Vy];
+
+	// Set carry bit
+	if (sum >> 255u)
+		registers[0xF] = 1;
+	else
+		registers[0xF] = 0;
+
+	// & with 0xFF in order to set back to 8 bits
+	registers[Vx] = sum & 0xFFu;
+}
+
+void CHIP8::OP_8xy5() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+
+	if (registers[Vx] > registers[Vy])
+		registers[0xF] = 1;
+	else
+		registers[0xF] = 0;
+
+	registers[Vx] -= registers[Vy];
+}
+
+void CHIP8::OP_8xy6() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	
+	// Save LSB to VF
+	registers[0xF] = registers[Vx] & 0x1u;
+
+	registers[Vx] >>= 1;
+}
+
+void CHIP8::OP_8xy7() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+
+	if (registers[Vy] > registers[Vx])
+		registers[0xF] = 1;
+	else
+		registers[0xF] = 0;
+
+	registers[Vx] = registers[Vy] - registers[Vx];
+}
+
+void CHIP8::OP_8xyE() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+
+	registers[0xF] = (registers[Vx] & 0x80u) >> 7u;
+
+	registers[Vx] <<= 1;
+}
+
+void CHIP8::OP_9xy0() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+
+	if (registers[Vx] != registers[Vy])
+		pc += 2;
+}
+
+void CHIP8::OP_Annn() {
+	uint16_t address = opcode & 0x0FFFu;
+
+	index = address;
+}
+
+void CHIP8::OP_Bnnn() {
+	uint16_t address = opcode & 0x0FFFu;
+
+	pc = registers[0] + address;
+}
+
+void CHIP8::OP_Cxkk() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t kk = opcode & 0x00FFu;
+
+	registers[Vx] = static_cast<uint8_t>(randByte(randGen)) & kk;
+}
+
+void CHIP8::OP_Dxyn() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+	uint8_t height = opcode & 0x000Fu;
+
+	// Wrap for when beyond screen boundaries
+	uint8_t xpos = registers[Vx] % SCREEN_WIDTH;
+	uint8_t ypos = registers[Vy] % SCREEN_HEIGHT;
+
+	registers[0xF] = 0;
+
+	for (unsigned int row = 0; row < height; ++row) {
+		uint8_t spriteByte = memory[index + row];
+
+		for (unsigned int col = 0; col < 8; ++col) {
+			uint8_t spritePixel = spriteByte & (0x80u >> col);
+			uint32_t* screenPixel = &video[(ypos + row) * SCREEN_WIDTH + (xpos + col)];
+			
+			if (spritePixel) {
+				if (*screenPixel == 0xFFFFFFFF)
+					registers[0xF] = 1;
+
+				*screenPixel ^= 0xFFFFFFFF;
+			}
+		}
+	}
+}
+
+void CHIP8::OP_Ex9E() {
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t key = registers[Vx];
+
+	if (keypad[key])
 		pc += 2;
 }
