@@ -66,7 +66,6 @@ public:
 	void LoadROM(const char* filename);
 
 	// Opcode Functions
-	void OP_0nnn(); // SYS addr
 	void OP_00E0();	// CLS
 	void OP_00EE(); // RET
 	void OP_1nnn(); // JP addr
@@ -127,23 +126,26 @@ void CHIP8::LoadROM(const char* filename) {
 	}
 }
 
-// Opcodes
+// Clear display
 void CHIP8::OP_00E0() {
 	// Set all video cells to 0 to clear screen
 	memset(video, 0, sizeof(video));
 }
 
+// Return from subroutine
 void CHIP8::OP_00EE() {
 	sp--;
 	pc = stack[sp];
 }
 
+// Jump to location nnn
 void CHIP8::OP_1nnn() {
 	uint16_t address = opcode & 0x0FFFu;
 
 	pc = address;
 }
 
+// Call subroutine at nnn
 void CHIP8::OP_2nnn() {
 	uint16_t address = opcode & 0x0FFFu;
 
@@ -152,6 +154,7 @@ void CHIP8::OP_2nnn() {
 	pc = address;
 }
 
+// Skip next instruction if Vx = kk
 void CHIP8::OP_3xkk() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t byte = opcode & 0x00FFu;
@@ -160,6 +163,7 @@ void CHIP8::OP_3xkk() {
 		pc += 2;
 }
 
+// Skip next instruction if Vx != kk
 void CHIP8::OP_4xkk() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t byte = opcode & 0x00FFu;
@@ -168,6 +172,7 @@ void CHIP8::OP_4xkk() {
 		pc += 2;
 }
 
+// Skip next instruction if Vx = Vy
 void CHIP8::OP_5xy0() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
@@ -176,6 +181,7 @@ void CHIP8::OP_5xy0() {
 		pc += 2;
 }
 
+// Set Vx = kk
 void CHIP8::OP_6xkk() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t kk = opcode & 0x00FFu;
@@ -183,6 +189,7 @@ void CHIP8::OP_6xkk() {
 	registers[Vx] = kk;
 }
 
+// Set Vx = Vx + kk
 void CHIP8::OP_7xkk() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t kk = opcode & 0x00FFu;
@@ -190,6 +197,7 @@ void CHIP8::OP_7xkk() {
 	registers[Vx] = registers[Vx] + kk;
 }
 
+// Set Vx = Vy
 void CHIP8::OP_8xy0() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
@@ -197,6 +205,7 @@ void CHIP8::OP_8xy0() {
 	registers[Vx] = registers[Vy];
 }
 
+// Set Vx = Vx OR Vy
 void CHIP8::OP_8xy1() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
@@ -204,6 +213,7 @@ void CHIP8::OP_8xy1() {
 	registers[Vx] |= registers[Vy];
 }
 
+// Set Vx = Vx AND Vy
 void CHIP8::OP_8xy2() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
@@ -211,6 +221,7 @@ void CHIP8::OP_8xy2() {
 	registers[Vx] &= registers[Vy];
 }
 
+// Set Vx = Vx XOR Vy
 void CHIP8::OP_8xy3() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
@@ -218,6 +229,7 @@ void CHIP8::OP_8xy3() {
 	registers[Vx] ^= registers[Vy];
 }
 
+// Set Vx = Vx + Vy and set VF to carry bit
 void CHIP8::OP_8xy4() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
@@ -234,6 +246,7 @@ void CHIP8::OP_8xy4() {
 	registers[Vx] = sum & 0xFFu;
 }
 
+// Set Vx = Vx - Vy set VF to carry bit
 void CHIP8::OP_8xy5() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
@@ -246,6 +259,7 @@ void CHIP8::OP_8xy5() {
 	registers[Vx] -= registers[Vy];
 }
 
+// Vx = Vx shiftR 1 and set VF to 1 if LSB of Vx is 1
 void CHIP8::OP_8xy6() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	
@@ -255,6 +269,7 @@ void CHIP8::OP_8xy6() {
 	registers[Vx] >>= 1;
 }
 
+// Set Vx = Vy - Vx and set VF = NOT borrow
 void CHIP8::OP_8xy7() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
@@ -267,6 +282,7 @@ void CHIP8::OP_8xy7() {
 	registers[Vx] = registers[Vy] - registers[Vx];
 }
 
+// Set Vx = Vx shiftL 1 and set VF to 1 if MSB of Vx is 1
 void CHIP8::OP_8xyE() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 
@@ -275,6 +291,7 @@ void CHIP8::OP_8xyE() {
 	registers[Vx] <<= 1;
 }
 
+// Skip next instruction if Vx != Vy
 void CHIP8::OP_9xy0() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
@@ -283,18 +300,21 @@ void CHIP8::OP_9xy0() {
 		pc += 2;
 }
 
+// Set I = nnn
 void CHIP8::OP_Annn() {
 	uint16_t address = opcode & 0x0FFFu;
 
 	index = address;
 }
 
+// Jump to location nnn + V0
 void CHIP8::OP_Bnnn() {
 	uint16_t address = opcode & 0x0FFFu;
 
 	pc = registers[0] + address;
 }
 
+// Set Vx = random byte AND kk
 void CHIP8::OP_Cxkk() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t kk = opcode & 0x00FFu;
@@ -302,6 +322,8 @@ void CHIP8::OP_Cxkk() {
 	registers[Vx] = static_cast<uint8_t>(randByte(randGen)) & kk;
 }
 
+// Display n-byte sprite starting at memory location I at (Vx, Vy)
+// set VF = collision
 void CHIP8::OP_Dxyn() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
@@ -330,6 +352,7 @@ void CHIP8::OP_Dxyn() {
 	}
 }
 
+// Skip next instruction if key with the value of Vx is pressed
 void CHIP8::OP_Ex9E() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t key = registers[Vx];
@@ -338,6 +361,7 @@ void CHIP8::OP_Ex9E() {
 		pc += 2;
 }
 
+// Skip next instruction if key with the value of Vx is not pressed
 void CHIP8::OP_ExA1() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 
@@ -347,12 +371,14 @@ void CHIP8::OP_ExA1() {
 		pc += 2;
 }
 
+// Set Vx = delay timer value
 void CHIP8::OP_Fx07() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 
 	registers[Vx] = delayTimer;
 }
 
+// Wait for a key press, store the value of key in Vx
 void CHIP8::OP_Fx0A() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 
@@ -366,24 +392,28 @@ void CHIP8::OP_Fx0A() {
 	pc -= 2;
 }
 
+// Set delay timer = Vx
 void CHIP8::OP_Fx15() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 
 	delayTimer = registers[Vx];
 }
 
+// Set sound timer = Vx
 void CHIP8::OP_Fx18() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 
 	soundTimer = registers[Vx];
 }
 
+// Set I = I + Vx
 void CHIP8::OP_Fx1E() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 
 	index += registers[Vx];
 }
 
+// Set I = location of sprite for digit Vx
 void CHIP8::OP_Fx29() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t digit = registers[Vx];
@@ -391,6 +421,7 @@ void CHIP8::OP_Fx29() {
 	index = FONTSET_START_ADDRESS + (5 * digit);
 }
 
+// Store BCD representation of Vx in memory locations I, I+1, and I+2
 void CHIP8::OP_Fx33() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 	uint8_t value = registers[Vx];
@@ -407,6 +438,7 @@ void CHIP8::OP_Fx33() {
 	memory[index] = value % 10;
 }
 
+// Store registers V0 through Vx in memory starting at location I
 void CHIP8::OP_Fx55() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 
@@ -415,6 +447,7 @@ void CHIP8::OP_Fx55() {
 	}
 }
 
+// Read registers V0 through Vx from memory starting at location I
 void CHIP8::OP_Fx65() {
 	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
 
