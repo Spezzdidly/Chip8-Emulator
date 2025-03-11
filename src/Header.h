@@ -56,7 +56,6 @@ public:
 		for (unsigned int i = 0; i < FONTSET_SIZE; ++i) {
 			memory[FONTSET_START_ADDRESS + i] = fontset[i];
 		}
-
 	}
 
 	std::default_random_engine randGen;
