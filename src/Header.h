@@ -47,8 +47,10 @@ public:
 	uint16_t opcode;
 
 	// Constructor
-	CHIP8() : randGen(static_cast<unsigned int>(chrono::system_clock::now().time_since_epoch().count())),
-			  randByte(0, 255u) {
+	CHIP8() : randGen(
+		static_cast<unsigned int>(chrono::system_clock::now().time_since_epoch().count())
+	),
+		randByte(0, 255u) {
 		// Initialize program counter
 		pc = START_ADDRESS;
 
@@ -56,6 +58,8 @@ public:
 		for (unsigned int i = 0; i < FONTSET_SIZE; ++i) {
 			memory[FONTSET_START_ADDRESS + i] = fontset[i];
 		}
+
+
 	}
 
 	std::default_random_engine randGen;
@@ -63,6 +67,23 @@ public:
 
 	// Class Functions
 	void LoadROM(const char* filename);
+	void Table0() {
+		((*this).*(table0[opcode & 0x000Fu]))();
+	}
+
+	void Table8() {
+		((*this).*(table8[opcode & 0x000Fu]))();
+	}
+
+	void TableE() {
+		((*this).*(tableE[opcode & 0x000Fu]))();
+	}
+
+	void TableF() {
+		((*this).*(tableF[opcode & 0x00FFu]))();
+	}
+
+	void OP_NULL() {}
 
 	// Opcode Functions
 	void OP_00E0();	// CLS
@@ -99,6 +120,13 @@ public:
 	void OP_Fx33(); // LD B, Vx
 	void OP_Fx55(); // LD [I], Vx
 	void OP_Fx65(); // LD Vx, [I]
+
+	typedef void (CHIP8:: *CHIP8Func)();
+	CHIP8Func table[0xF + 1];
+	CHIP8Func table0[0xE + 1];
+	CHIP8Func table8[0xE + 1];
+	CHIP8Func tableE[0xE + 1];
+	CHIP8Func tableF[0x65 + 1];
 };
 
 void CHIP8::LoadROM(const char* filename) {
