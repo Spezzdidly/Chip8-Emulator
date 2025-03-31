@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <random>
+#include <SDL2/SDL_image.h>
 
 using namespace std;
 
@@ -32,8 +33,15 @@ uint8_t fontset[FONTSET_SIZE] = {
 	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
+class Platform {
+public: Platform(char const* title, int wWidth, int wHeight, int texWidth, int texHeight) {
+	
+}
+};
+
 class CHIP8 {
 public:
+	// CPU Stuff
 	uint8_t registers[16]{};
 	uint8_t memory[4096]{};
 	uint16_t index{};
@@ -136,6 +144,23 @@ public:
 	}
 
 	void OP_NULL() {}
+
+	void Cycle() {
+		// Fetch
+		opcode = (memory[pc] << 8u) | memory[pc + 1];
+
+		// Increment PC
+		pc += 2;
+
+		// Decode and execute
+		((*this).*(table[(opcode & 0xF000u) >> 12u]))();
+
+		// Decrement delay and sound timers if set
+		if (delayTimer > 0)
+			--delayTimer;
+		if (soundTimer > 0)
+			--soundTimer;
+	}
 
 	// Opcode Functions
 	void OP_00E0();	// CLS
